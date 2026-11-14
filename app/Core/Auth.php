@@ -35,4 +35,19 @@ final class Auth
 			exit;
 		}
 	}
+
+	public static function isAdmin(): bool
+	{
+		return (self::user()['role'] ?? '') === 'admin';
+	}
+
+	public static function requireRole(string $role): void
+	{
+		self::requireLogin();
+
+		if ((self::user()['role'] ?? '') !== $role) {
+			http_response_code(403);
+			exit('Acesso negado');
+		}
+	}
 }

@@ -27,6 +27,12 @@ final class DashboardController extends Controller
         $this->render('dashboard', $this->data());
     }
 
+    public function settings(): void
+    {
+        Auth::requireLogin();
+        $this->render('configuracoes', ['user' => Auth::user()]);
+    }
+
     public function module(string $module): void
     {
         Auth::requireLogin();
@@ -86,8 +92,14 @@ final class DashboardController extends Controller
 
     public function report(): void
     {
-        Auth::requireLogin();
+		Auth::requireRole('admin');
         $data = $this->data();
+        $students = array_values(
+            array_filter(
+                Repository::all('users'),
+                fn($user) => ($user['role'] ?? '') === 'student',
+            ),
+        );
 
         $this->render('relatorio', [
             'counts' => [
@@ -95,6 +107,7 @@ final class DashboardController extends Controller
                 'Tarefas' => count($data['tasks']),
                 'Horários' => count($data['schedules']),
                 'Materiais' => count($data['materials']),
+                'Alunos cadastrados' => count($students),
                 'Tarefas concluídas' => count(
                     array_filter(
                         $data['tasks'],
@@ -121,6 +134,95 @@ final class DashboardController extends Controller
         $this->redirect('/?page=' . $type);
     }
 
+    public function saveSettings(): void
+    {
+        Auth::requireLogin();
+
+        $currentUser = Auth::user();
+        $name = trim($_POST['name'] ?? '');
+        $email = strtolower(trim($_POST['email'] ?? ''));
+        $course = trim($_POST['course'] ?? '');
+        $theme = $_POST['theme'] ?? 'light';
+
+        if ($name === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $this->redirect('/?page=settings&error=invalid');
+        }
+
+        if (!in_array($theme, ['light', 'dark'], true)) {
+            $theme = 'light';
+        }
+
+        foreach (Repository::all('users') as $user) {
+            if ((int) $user['id'] !== (int) $currentUser['id'] && $user['email'] === $email) {
+                $this->redirect('/?page=settings&error=email');
+            }
+        }
+
+        $changes = [
+            'name' => $name,
+            'email' => $email,
+            'course' => $course,
+            'theme' => $theme,
+        ];
+
+        if (!empty($_POST['password'])) {
+            $changes['password'] = password_hash($_POST['password'], PASSWORD_DEFAULT);
+        }
+
+        if (!empty($_FILES['avatar']['tmp_name'])) {
+            $avatar = $this->storeAvatar($_FILES['avatar'], (int) $currentUser['id']);
+
+            if ($avatar !== null) {
+                $changes['avatar'] = $avatar;
+            }
+        }
+
+        $updatedUser = Repository::updateUser((int) $currentUser['id'], $changes);
+
+        if ($updatedUser !== null) {
+            Auth::login($updatedUser);
+        }
+
+        $this->redirect('/?page=settings&saved=1');
+    }
+
+    private function storeAvatar(array $file, int $userId): ?string
+    {
+        if (($file['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK
+            || ($file['size'] ?? 0) > 2 * 1024 * 1024
+        ) {
+            return null;
+        }
+
+        $imageInfo = getimagesize($file['tmp_name']);
+        if ($imageInfo === false) {
+            return null;
+        }
+
+        $extensions = [
+            IMAGETYPE_JPEG => 'jpg',
+            IMAGETYPE_PNG => 'png',
+            IMAGETYPE_WEBP => 'webp',
+        ];
+        $extension = $extensions[$imageInfo[2] ?? 0] ?? null;
+
+        if ($extension === null) {
+            return null;
+        }
+
+        $directory = BASE_PATH . '/public/uploads/avatars';
+        if (!is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        $filename = 'avatar-' . $userId . '-' . bin2hex(random_bytes(6)) . '.' . $extension;
+        $target = $directory . '/' . $filename;
+
+        return move_uploaded_file($file['tmp_name'], $target)
+            ? '/uploads/avatars/' . $filename
+            : null;
+    }
+
     public function delete(): void
     {
         Auth::requireLogin();
@@ -134,12 +236,7 @@ final class DashboardController extends Controller
 
     public function backup(): void
     {
-        Auth::requireLogin();
-
-        if (Auth::user()['role'] !== 'admin') {
-            http_response_code(403);
-            exit('Acesso negado');
-        }
+        Auth::requireRole('admin');
 
         $name = Database::backup();
         header('Content-Type: application/json');

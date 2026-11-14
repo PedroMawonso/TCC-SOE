@@ -32,6 +32,24 @@ final class Repository
         return $item;
     }
 
+    public static function updateUser(int $id, array $changes): ?array
+    {
+        $data = Database::read();
+
+        foreach ($data['users'] ?? [] as $index => $user) {
+            if ((int) ($user['id'] ?? 0) !== $id) {
+                continue;
+            }
+
+            $data['users'][$index] = array_merge($user, $changes);
+            Database::write($data);
+
+            return $data['users'][$index];
+        }
+
+        return null;
+    }
+
     public static function delete(string $table, int $id, ?int $userId = null): void
     {
         $data = Database::read();

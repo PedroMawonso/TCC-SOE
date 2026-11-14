@@ -15,7 +15,11 @@ $activePage = 'report';
             </div>
 
             <div class="profile">
-                <div class="avatar">AD</div>
+                <?php if (!empty($user['avatar'])): ?>
+                    <img class="avatar avatar-image" src="<?= htmlspecialchars($user['avatar']) ?>" alt="Foto de <?= htmlspecialchars($user['name']) ?>">
+                <?php else: ?>
+                    <div class="avatar"><?= strtoupper(substr($user['name'], 0, 2)) ?></div>
+                <?php endif; ?>
                 <div>
                     <strong><?= htmlspecialchars($user['name']) ?></strong>
                     <small><?= htmlspecialchars($user['role']) ?></small>

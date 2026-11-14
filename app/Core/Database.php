@@ -17,6 +17,8 @@ final class Database
                     'password' => '$2y$10$NiawZU0J7MJC6olmYlAQPOxSCsMiL.1nyljxtGoqoAeZ4lkLUO2jW',
                     'role' => 'admin',
                     'course' => 'Administração',
+                    'avatar' => null,
+                    'theme' => 'light',
                     'created_at' => date('Y-m-d H:i:s'),
                 ],
             ],

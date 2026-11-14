@@ -28,8 +28,14 @@ $activePage = $activePage ?? '';
     <a class="nav <?= $activePage === 'materials' ? 'active' : '' ?>" href="/?page=materials">
         ▤ <span>Materiais</span>
     </a>
-    <a class="nav <?= $activePage === 'report' ? 'active' : '' ?>" href="/?page=report">
-        ↗ <span>Relatórios</span>
+    <?php if (\App\Core\Auth::isAdmin()): ?>
+        <a class="nav <?= $activePage === 'report' ? 'active' : '' ?>" href="/?page=report">
+            ↗ <span>Relatórios</span>
+        </a>
+    <?php endif; ?>
+
+    <a class="nav <?= $activePage === 'settings' ? 'active' : '' ?>" href="/?page=settings">
+        ⚙ <span>Configurações</span>
     </a>
 
     <div class="sidebar-bottom">

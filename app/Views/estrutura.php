@@ -6,7 +6,7 @@
 		<title><?= APP_NAME ?></title>
 		<link rel="stylesheet" href="/assets/style.css">
 	</head>
-	<body>
+	<body class="theme-<?= htmlspecialchars((\App\Core\Auth::user()['theme'] ?? 'light')) ?>">
 		<div class="page-loader" aria-hidden="true">
 			<span></span>
 			<strong>A carregar</strong>

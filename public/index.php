@@ -49,6 +49,16 @@ if ($page === 'report') {
 	exit;
 }
 
+if ($page === 'settings') {
+	$dashboard->settings();
+	exit;
+}
+
+if ($page === 'save-settings' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+	$dashboard->saveSettings();
+	exit;
+}
+
 if (in_array($page, ['subjects', 'schedules', 'tasks', 'materials'], true)) {
 	$dashboard->module($page);
 	exit;
